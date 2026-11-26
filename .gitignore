@@ -1,0 +1,8 @@
+# Generated sysinfo reports
+sysinfo_*.log
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+.venv/
+venv/
