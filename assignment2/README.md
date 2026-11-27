@@ -41,19 +41,9 @@ docker build -t devops-flask-app:ci ./assignment2
 ```
 
 ## Task 4: Find and Fix the Bugs
-> **Note:** In `Assignment-SecAndDevOps-2026-devops.pdf` (2 pages), the teammate's buggy code/Dockerfile snippet referenced in Task 4 was omitted from the PDF.
 
-If you have the teammate's snippet, paste it and we can diagnose the exact lines. Below are the standard root causes when a containerized Flask app cannot be reached, along with their fixes:
-
-1. **Flask bound to `127.0.0.1` instead of `0.0.0.0`**
-   - *Problem:* `app.run()` defaults to `host="127.0.0.1"`, which only listens on the container's loopback interface, making it unreachable from the host.
-   - *Fix:* Use `app.run(host="0.0.0.0", port=5000)`.
-2. **Missing host-to-container port mapping (`-p`)**
-   - *Problem:* Running `docker run <image>` without `-p 5000:5000` does not publish port `5000` to the host.
-   - *Fix:* Run with `docker run -p 5000:5000 <image>` and document `EXPOSE 5000` in the `Dockerfile`.
-3. **Port mismatch between Flask, `EXPOSE`, and `-p`**
-   - *Problem:* Flask listens on `5000` while `docker run -p 8080:80` or `EXPOSE` expects a different port.
-   - *Fix:* Align the app port (`5000`), `EXPOSE 5000`, and container port in `-p <host_port>:5000`.
-4. **Missing dependencies or wrong `CMD` / `WORKDIR`**
-   - *Problem:* Container exits immediately because `flask` isn't installed (`requirements.txt` not copied/installed) or `CMD` points to the wrong file.
-   - *Fix:* Ensure `WORKDIR /app`, `COPY requirements.txt .`, `RUN pip install --no-cache-dir -r requirements.txt`, `COPY app.py .`, and `CMD ["python", "app.py"]`.
+| # | Problem | Why It Fails | Fix |
+|---|---------|--------------|-----|
+| 1 | `FORM python:3.12-slim` | `FORM` is a typo and not a valid Dockerfile instruction; Docker build fails with an unknown instruction error. | Change `FORM` to `FROM`: `FROM python:3.12-slim` |
+| 2 | `RUN pip install -r requirement.txt` | Typo in filename (`requirement.txt` instead of `requirements.txt`). `pip` fails with `Could not open requirements file: [Errno 2] No such file or directory`. | Change to `RUN pip install --no-cache-dir -r requirements.txt` |
+| 3 | `docker run -p 5000:8080 myapp` | `app.py` listens on port `5000` (`app.run(host="0.0.0.0", port=5000)`), not `8080`. Forwarding host port `5000` to container port `8080` means requests to `localhost:5000` never reach Flask. | Map host port `5000` to container port `5000`: `docker run -p 5000:5000 myapp` (and add `EXPOSE 5000` in the `Dockerfile` for documentation). |
